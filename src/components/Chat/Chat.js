@@ -8,6 +8,10 @@ import Input from "../Input/Input";
 import Messages from "../Messages/Messages";
 import TextContainer from "../TextContainer/TextContainer";
 
+import "dotenv/config";
+
+console.log("process.env ===> ", process.env);
+
 let socket;
 
 export default function Chat({ location }) {
@@ -17,7 +21,7 @@ export default function Chat({ location }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [users, setUsers] = useState([]);
-  const ENDPOINT = "localhost:8000";
+  const ENDPOINT = process.env.REACT_APP_ENDPOINT;
 
   useEffect(() => {
     const { name, room } = queryString.parse(location.search);
