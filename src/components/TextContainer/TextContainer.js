@@ -9,9 +9,9 @@ const TextContainer = ({ users }) => (
         <h1>People currently chatting:</h1>
         <div className="activeContainer">
           <h2>
-            {users.map(({ name }) => (
-              <div key={name} className="activeItem">
-                {name}
+            {users.map(({ identifier }) => (
+              <div key={identifier} className="activeItem">
+                {identifier}
                 <img alt="Online Icon" src={onlineIcon} />
               </div>
             ))}
