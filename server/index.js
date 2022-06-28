@@ -4,6 +4,7 @@ const socketio = require("socket.io");
 const cors = require("cors");
 
 const { addUser, removeUser, getUser, getUsersInRoom } = require("./users");
+const { addMessage, getLastMessages } = require("./messages");
 
 const router = require("./router");
 
@@ -11,16 +12,29 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server);
 
+const db = require("./models");
+
 app.use(cors());
 app.use(router);
 
+db.sequelize
+  .sync()
+  .then(() => {
+    console.log("Synced db.");
+  })
+  .catch((err) => {
+    console.log("Failed to sync db: " + err.message);
+  });
+
 io.on("connect", (socket) => {
-  socket.on("join", ({ name, room }, callback) => {
-    const { error, user } = addUser({
+  socket.on("join", async ({ name, room }, callback) => {
+    const { error, user } = await addUser({
       socketId: socket.id,
       identifier: name,
       room,
     });
+
+    // const lastMessages = await getLastMessages();
 
     if (error) return callback(error);
 
@@ -30,6 +44,11 @@ io.on("connect", (socket) => {
       socketId: "admin",
       text: `${user.identifier}, welcome to room ${user.room}.`,
     });
+
+    // socket.emit("lastMessages", {
+    //   messages: lastMessages ?? [],
+    // });
+
     socket.broadcast.to(user.room).emit("message", {
       socketId: "admin",
       text: `${user.identifier} has joined!`,
@@ -43,9 +62,10 @@ io.on("connect", (socket) => {
     callback();
   });
 
-  socket.on("sendMessage", (message, callback) => {
+  socket.on("sendMessage", async (message, callback) => {
     const user = getUser(socket.id);
     io.to(user.room).emit("message", { socketId: socket.id, text: message });
+    addMessage({ userId: user.userId, text: message });
     callback();
   });
 

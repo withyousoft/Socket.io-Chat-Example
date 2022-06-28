@@ -1,3 +1,4 @@
+const User = require("./models/user.model");
 const users = [];
 
 /**
@@ -5,7 +6,7 @@ const users = [];
  * @param {socketId, identifier, room} id: Socked ID, name: user identifier, room: room identifier
  * @returns
  */
-const addUser = ({ socketId, identifier, room }) => {
+const addUser = async ({ socketId, identifier, room }) => {
   identifier = identifier.trim().toLowerCase();
   room = room.trim().toLowerCase();
 
@@ -17,7 +18,12 @@ const addUser = ({ socketId, identifier, room }) => {
     return { error: "User Identifier is taken already" };
   }
 
-  const user = { socketId, identifier, room };
+  let dbUser = await User.findOne({ where: { identifier } });
+  if (!dbUser) {
+    dbUser = await User.create({ identifier });
+  }
+
+  const user = { socketId, userId: dbUser.id, identifier, room };
 
   users.push(user);
 
