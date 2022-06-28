@@ -19,8 +19,6 @@ export default function Chat({ location }) {
   const [users, setUsers] = useState([]);
   const ENDPOINT = "localhost:8000";
 
-  console.log(users);
-
   useEffect(() => {
     const { name, room } = queryString.parse(location.search);
     socket = io(ENDPOINT);
@@ -37,6 +35,17 @@ export default function Chat({ location }) {
   useEffect(() => {
     socket.on("message", (message) => {
       setMessages((messages) => [...messages, message]);
+    });
+
+    socket.on("lastMessages", ({ lastMessages }) => {
+      setMessages((messages) => [
+        ...messages,
+        ...lastMessages.map((el) => ({
+          socketId: "lastMessage",
+          identifier: el.identifier,
+          text: el.text,
+        })),
+      ]);
     });
 
     socket.on("roomData", ({ users }) => {

@@ -12,6 +12,10 @@ const Message = sequelize.define("message", {
     type: Sequelize.INTEGER,
     reference: { model: "user", key: "id" },
   },
+  room: {
+    type: Sequelize.STRING,
+    allowNull: false,
+  },
   text: Sequelize.STRING,
 });
 

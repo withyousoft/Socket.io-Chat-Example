@@ -11,6 +11,8 @@ function Messages({ messages, name, users }) {
           user:
             message.socketId === "admin"
               ? "admin"
+              : message.socketId === "lastMessage"
+              ? message.identifier
               : users.find((el) => el.socketId === message.socketId).identifier,
           text: decodeURI(message.text),
         };

@@ -19,6 +19,7 @@ app.use(router);
 
 db.sequelize
   .sync()
+  // .sync({ force: true })
   .then(() => {
     console.log("Synced db.");
   })
@@ -34,7 +35,7 @@ io.on("connect", (socket) => {
       room,
     });
 
-    // const lastMessages = await getLastMessages();
+    const lastMessages = await getLastMessages({ room });
 
     if (error) return callback(error);
 
@@ -45,9 +46,9 @@ io.on("connect", (socket) => {
       text: `${user.identifier}, welcome to room ${user.room}.`,
     });
 
-    // socket.emit("lastMessages", {
-    //   messages: lastMessages ?? [],
-    // });
+    socket.emit("lastMessages", {
+      lastMessages: lastMessages,
+    });
 
     socket.broadcast.to(user.room).emit("message", {
       socketId: "admin",
@@ -65,7 +66,7 @@ io.on("connect", (socket) => {
   socket.on("sendMessage", async (message, callback) => {
     const user = getUser(socket.id);
     io.to(user.room).emit("message", { socketId: socket.id, text: message });
-    addMessage({ userId: user.userId, text: message });
+    addMessage({ userId: user.userId, room: user.room, text: message });
     callback();
   });
 
