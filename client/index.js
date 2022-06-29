@@ -27,7 +27,10 @@ let countOfConnection = 0;
 
 prompt.get(properties, function (err, result) {
   if (err) return onErr(err);
-  countOfConnection = result.countOfConnection;
+  countOfConnection = parseInt(result.countOfConnection);
+
+  createClient();
+  setInterval(printReport, 5000);
 });
 
 function onErr(err) {
@@ -39,17 +42,24 @@ const URL = process.env.ENDPOINT || "http://localhost:8000";
 const POLLING_PERCENTAGE = process.env.POLLING_PERCENTAGE || 0.05;
 const CLIENT_CREATION_INTERVAL_IN_MS =
   process.env.CLIENT_CREATION_INTERVAL_IN_MS || 100;
-const EMIT_INTERVAL_IN_MS = process.env.EMIT_INTERVAL_IN_MS || 1000;
+const MAX_MESSAGE_COUNT = 100;
 
 let clientCount = 0;
 let lastReport = new Date().getTime();
 let packetsSinceLastReport = 0;
 
-const createClient = () => {
+const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+const createClient = async () => {
   // for demonstration purposes, some clients stay stuck in HTTP long-polling
   const transports =
     Math.random() < POLLING_PERCENTAGE ? ["polling"] : ["polling", "websocket"];
-  const socket = io.connect(URL, { reconnect: true, port: 8000, transports });
+  const socket = io.connect(URL, {
+    reconnect: true,
+    transports,
+  });
   const room = "load_test";
   const name = uniqueNamesGenerator({
     dictionaries: [adjectives, colors, animals],
@@ -60,6 +70,18 @@ const createClient = () => {
     if (error) {
       console.log(error);
     }
+  });
+
+  socket.on("reconnect", (attempt) => {
+    console.log("Reconnect is succeed. attempt ===> ", attempt);
+  });
+
+  socket.io.on("reconnect_attempt", (attempt) => {
+    console.log("Try to reconnect attempt ===> ", attempt);
+  });
+
+  socket.io.on("reconnect_error", (error) => {
+    console.log("reconnect is failed with reason ===> ", error);
   });
 
   socket.on("message", (message) => {
@@ -80,25 +102,38 @@ const createClient = () => {
     packetsSinceLastReport++;
   });
 
-  setTimeout(() => {
-    setInterval(() => {
+  socket.on("connect", (data) => {
+    console.log("connected  ===> ");
+  });
+
+  socket.on("disconnect", async (reason) => {
+    console.log(`disconnect due to ${reason}`);
+    if (reason === "io client disconnect") {
+      await sleep(Math.floor(Math.random() * 1000));
+      socket.connect();
+    }
+  });
+
+  setTimeout(async () => {
+    for (var i = 0; i < MAX_MESSAGE_COUNT; i++) {
       const newMessage = lorem.generateSentences(1);
+      // eslint-disable-next-line no-loop-func
       socket.emit("sendMessage", encodeURI(newMessage), () => {
         packetsSinceLastReport++;
       });
-    }, EMIT_INTERVAL_IN_MS);
-  }, 1000);
+      await sleep(Math.floor(Math.random() * 1000));
+    }
 
-  socket.on("disconnect", (reason) => {
-    console.log(`disconnect due to ${reason}`);
-  });
+    await sleep(Math.floor(Math.random() * 1000));
+    socket.disconnect();
+  }, 1000);
 
   if (++clientCount < countOfConnection) {
     setTimeout(createClient, CLIENT_CREATION_INTERVAL_IN_MS);
   }
 };
 
-createClient();
+// createClient();
 
 const printReport = () => {
   const now = new Date().getTime();
@@ -114,5 +149,3 @@ const printReport = () => {
   packetsSinceLastReport = 0;
   lastReport = now;
 };
-
-setInterval(printReport, 5000);
