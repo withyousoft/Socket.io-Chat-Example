@@ -42,7 +42,7 @@ const URL = process.env.ENDPOINT || "http://localhost:8000";
 const POLLING_PERCENTAGE = process.env.POLLING_PERCENTAGE || 0.05;
 const CLIENT_CREATION_INTERVAL_IN_MS =
   process.env.CLIENT_CREATION_INTERVAL_IN_MS || 100;
-const MAX_MESSAGE_COUNT = 100;
+const MAX_MESSAGE_COUNT = process.env.MAX_MESSAGE_COUNT || 100;
 
 let clientCount = 0;
 let lastReport = new Date().getTime();
