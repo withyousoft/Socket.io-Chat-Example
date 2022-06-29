@@ -7,10 +7,7 @@ import InfoBar from "../InfoBar/InfoBar";
 import Input from "../Input/Input";
 import Messages from "../Messages/Messages";
 import TextContainer from "../TextContainer/TextContainer";
-
 import "dotenv/config";
-
-console.log("process.env ===> ", process.env);
 
 let socket;
 
